@@ -97,6 +97,9 @@
       glass = "none",
       hingeLeft = true,
       scene = "studio",
+      entryConfig = "single",          // single | double | single-sidelite-l | single-sidelite-r | single-sidelite-both | double-sidelite
+      transom = "none",                // none | rectangular | arched | half-round
+      sideliteGlass = "frosted",       // none | clear | frosted | decorative — glass style for sidelites
       w = 600,
       h = 800,
       uniq = Math.random().toString(36).slice(2, 8),
@@ -106,17 +109,74 @@
     const hwStyle  = (HARDWARE_STYLES.find(s => s.id === hwStyleId) || HARDWARE_STYLES[0]).id;
     const hwFinish = HARDWARE_FINISHES.find(f => f.id === hwFinishId) || HARDWARE_FINISHES[1];
 
-    // Layout — door fills ~60% of width, 80% of height, centered
-    const dw = w * 0.52;
-    const dh = h * 0.82;
-    const dx = (w - dw) / 2;
+    // ── Bay layout ────────────────────────────────────────────
+    // The casing surrounds the WHOLE opening (door + any sidelites + transom).
+    // We compute the bay widths first, then position each bay inside the casing.
+    const hasTransom = transom && transom !== "none";
+    const transomFrac = hasTransom ? 0.14 : 0;       // fraction of total opening height
+    const dh = h * 0.82;                              // total opening height (door + transom)
     const dy = h * 0.08;
+    const transomH = dh * transomFrac;
+    const doorBayH = dh - transomH;
+    const doorBayY = dy + transomH;
 
-    // Frame inside
-    const fw = dw * 0.94;
+    // Bays — proportional widths (door = 1.0 unit, sidelite = 0.34 units, narrow gap between via frame mullion)
+    let bays = [];
+    if (entryConfig === "single") {
+      bays = [{ type: "door", units: 1.0, hingeLeft }];
+    } else if (entryConfig === "double") {
+      bays = [
+        { type: "door", units: 0.85, hingeLeft: true },
+        { type: "door", units: 0.85, hingeLeft: false },
+      ];
+    } else if (entryConfig === "single-sidelite-l") {
+      bays = [
+        { type: "sidelite", units: 0.36 },
+        { type: "door", units: 1.0, hingeLeft },
+      ];
+    } else if (entryConfig === "single-sidelite-r") {
+      bays = [
+        { type: "door", units: 1.0, hingeLeft },
+        { type: "sidelite", units: 0.36 },
+      ];
+    } else if (entryConfig === "single-sidelite-both") {
+      bays = [
+        { type: "sidelite", units: 0.36 },
+        { type: "door", units: 1.0, hingeLeft },
+        { type: "sidelite", units: 0.36 },
+      ];
+    } else if (entryConfig === "double-sidelite") {
+      bays = [
+        { type: "sidelite", units: 0.32 },
+        { type: "door", units: 0.85, hingeLeft: true },
+        { type: "door", units: 0.85, hingeLeft: false },
+        { type: "sidelite", units: 0.32 },
+      ];
+    } else {
+      bays = [{ type: "door", units: 1.0, hingeLeft }];
+    }
+
+    // Compute total opening width so the door (1.0 unit) fills ~doorBaseUnit px
+    const doorBaseUnit = w * 0.46;
+    const totalUnits = bays.reduce((s, b) => s + b.units, 0);
+    const mullion = w * 0.012;                        // frame mullion between bays
+    const dw = doorBaseUnit * totalUnits + mullion * (bays.length - 1);
+    const dx = (w - dw) / 2;
+
+    // Frame (casing-inside reveal) covers the full opening
+    const fw = dw;
     const fh = dh;
-    const fx = dx + (dw - fw) / 2;
+    const fx = dx;
     const fy = dy;
+
+    // Position each bay
+    let cursor = dx;
+    bays = bays.map(b => {
+      const bw = doorBaseUnit * b.units;
+      const item = { ...b, x: cursor, w: bw };
+      cursor += bw + mullion;
+      return item;
+    });
 
     const dc    = mat.color;
     const frame = adj(dc, mat.wood ? -28 : -22);
@@ -247,58 +307,242 @@
     `;
 
     // ── Door slab body ─────────────────────────────────────────
-    const slabInset = fw * 0.035;
-    const sx = fx + slabInset;
-    const sy = fy + slabInset * 0.5;
-    const sw = fw - slabInset * 2;
-    const sh = fh - slabInset * 0.5;
+    // Extract the panel/slab/hardware drawing into helpers so we can call
+    // them once per "door" bay.
 
-    let slab = `
-      <!-- Door slab base color -->
-      <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="${dc}"/>
-    `;
+    function drawDoorBay(bay, idx) {
+      const slabInset = bay.w * 0.035;
+      const sx = bay.x + slabInset;
+      const sy = doorBayY + slabInset * 0.5;
+      const sw = bay.w - slabInset * 2;
+      const sh = doorBayH - slabInset * 0.5;
+      const localHingeLeft = bay.hingeLeft;
 
-    // Wood grain over slab
-    if (mat.wood) {
-      slab += `
-        <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}"
-              filter="url(#grain-${uniq})" opacity="0.85"/>
-        <!-- Subtle long vertical streaks -->
-        <g opacity="0.18">
-          ${Array.from({length: 5}).map((_, i) => {
-            const xx = sx + sw * (0.15 + i * 0.16) + (Math.sin(i * 4 + grainSeed) * sw * 0.04);
-            return `<rect x="${xx}" y="${sy}" width="${sw * 0.005}" height="${sh}" fill="${adj(dc, -50)}"/>`;
-          }).join("")}
-        </g>
-      `;
+      let out = "";
+
+      // Slab base + grain + lighting
+      out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="${dc}"/>`;
+      if (mat.wood) {
+        out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}"
+                  filter="url(#grain-${uniq})" opacity="0.85"/>`;
+        out += `<g opacity="0.18">${Array.from({length: 5}).map((_, i) => {
+          const xx = sx + sw * (0.15 + i * 0.16) + (Math.sin(i * 4 + grainSeed) * sw * 0.04);
+          return `<rect x="${xx}" y="${sy}" width="${sw * 0.005}" height="${sh}" fill="${adj(dc, -50)}"/>`;
+        }).join("")}</g>`;
+      }
+      out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="url(#light-${uniq})"/>`;
+      out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="url(#ao-${uniq})"/>`;
+
+      // Panels (style-dependent)
+      const PM = sw * 0.05, PG = sw * 0.04;
+      const PX1 = sx + PM;
+      const PW2 = (sw - PM * 2 - PG) / 2;
+      const PX2 = PX1 + PW2 + PG;
+      const PYS = sy + PM;
+      const PAVAIL = sh - PM * 2;
+      const styleForBay = (entryConfig === "double" || entryConfig === "double-sidelite") && doorStyle === "arch"
+        ? "two-panel" : doorStyle;  // arch top only makes sense on a single door
+
+      if (styleForBay === "two-panel") {
+        const ph = (PAVAIL - PG) / 2;
+        out += panel(PX1, PYS, sw - PM * 2, ph, sx, sy, sw, sh);
+        out += panel(PX1, PYS + ph + PG, sw - PM * 2, ph, sx, sy, sw, sh);
+      } else if (styleForBay === "four-panel") {
+        const ph = (PAVAIL - PG) / 2;
+        out += panel(PX1, PYS, PW2, ph, sx, sy, sw, sh);
+        out += panel(PX2, PYS, PW2, ph, sx, sy, sw, sh);
+        out += panel(PX1, PYS + ph + PG, PW2, ph, sx, sy, sw, sh);
+        out += panel(PX2, PYS + ph + PG, PW2, ph, sx, sy, sw, sh);
+      } else if (styleForBay === "six-panel") {
+        const th = PAVAIL * 0.21, mh = PAVAIL * 0.46, bh = PAVAIL - th - mh - PG * 2;
+        const y1 = PYS, y2 = y1 + th + PG, y3 = y2 + mh + PG;
+        out += panel(PX1, y1, PW2, th, sx, sy, sw, sh);
+        out += panel(PX2, y1, PW2, th, sx, sy, sw, sh);
+        out += panel(PX1, y2, PW2, mh, sx, sy, sw, sh, true);
+        out += panel(PX2, y2, PW2, mh, sx, sy, sw, sh, true);
+        out += panel(PX1, y3, PW2, bh, sx, sy, sw, sh);
+        out += panel(PX2, y3, PW2, bh, sx, sy, sw, sh);
+      } else if (styleForBay === "craftsman") {
+        const th = PAVAIL * 0.28, bh = PAVAIL - th - PG;
+        out += panel(PX1, PYS, PW2, th, sx, sy, sw, sh, true);
+        out += panel(PX2, PYS, PW2, th, sx, sy, sw, sh, true);
+        out += panel(PX1, PYS + th + PG, sw - PM * 2, bh, sx, sy, sw, sh);
+      } else if (styleForBay === "arch") {
+        const ax = PX1, ay = PYS;
+        const aw = sw - PM * 2, ah = PAVAIL;
+        const ar = aw * 0.45;
+        const clipId = `arch-clip-${uniq}-${idx}`;
+        out += `<defs><clipPath id="${clipId}"><path d="M${ax},${ay + ar} Q${ax + aw/2},${ay - ar * 0.3} ${ax + aw},${ay + ar} L${ax + aw},${ay + ah} L${ax},${ay + ah} Z"/></clipPath></defs>`;
+        out += `<rect x="${ax}" y="${ay}" width="${aw}" height="${ah}" fill="${adj(dc, -30)}" clip-path="url(#${clipId})"/>`;
+        const inset = 8;
+        out += `<rect x="${ax + inset}" y="${ay + inset}" width="${aw - inset * 2}" height="${ah - inset * 2}" fill="${dc}" clip-path="url(#${clipId})"/>`;
+        if (glass !== "none") {
+          out += `<rect x="${ax + inset}" y="${ay + ar * 0.4}" width="${aw - inset * 2}" height="${ah - ar * 0.4 - inset}" fill="url(#glass-${uniq})" clip-path="url(#${clipId})"/>`;
+        }
+        out += `<path d="M${ax},${ay + ar} Q${ax + aw/2},${ay - ar * 0.3} ${ax + aw},${ay + ar}" stroke="${adj(dc, -55)}" stroke-width="1.4" fill="none" opacity="0.7"/>`;
+      } else if (styleForBay === "dutch") {
+        const splitH = sh * 0.46, splitY = sy + splitH;
+        const th = splitH - PM * 1.5, bh = sh - splitH - PM * 1.5;
+        out += panel(PX1, PYS, PW2, th, sx, sy, sw, sh);
+        out += panel(PX2, PYS, PW2, th, sx, sy, sw, sh);
+        out += `<rect x="${sx}" y="${splitY - 6}" width="${sw}" height="12" fill="${adj(frame, 8)}"/>`;
+        out += `<rect x="${sx}" y="${splitY - 6}" width="${sw}" height="2" fill="${adj(dc, -45)}" opacity="0.6"/>`;
+        out += `<rect x="${sx}" y="${splitY + 4}" width="${sw}" height="2" fill="${hi}" opacity="0.5"/>`;
+        out += panel(PX1, splitY + 8, PW2, bh, sx, sy, sw, sh);
+        out += panel(PX2, splitY + 8, PW2, bh, sx, sy, sw, sh);
+      } else if (styleForBay === "barn") {
+        const rh = sh * 0.04;
+        const ty = sy + sh * 0.06, by = sy + sh - sh * 0.06 - rh;
+        out += `<rect x="${sx + 12}" y="${ty}" width="${sw - 24}" height="${rh}" fill="${frame}" rx="2"/>`;
+        out += `<rect x="${sx + 12}" y="${by}" width="${sw - 24}" height="${rh}" fill="${frame}" rx="2"/>`;
+        out += `<line x1="${sx + 14}" y1="${ty + rh}" x2="${sx + sw - 14}" y2="${by}" stroke="${frame}" stroke-width="${sw * 0.035}" stroke-linecap="round"/>`;
+        out += `<rect x="${sx + 12}" y="${ty}" width="${sw - 24}" height="3" fill="${adj(frame, 25)}" opacity="0.5" rx="2"/>`;
+        out += `<rect x="${sx + 12}" y="${by}" width="${sw - 24}" height="3" fill="${adj(frame, 25)}" opacity="0.5" rx="2"/>`;
+        for (let i = 1; i < 5; i++) {
+          const xx = sx + (sw * i / 5);
+          out += `<line x1="${xx}" y1="${sy}" x2="${xx}" y2="${sy + sh}" stroke="${adj(dc, -50)}" stroke-width="1" opacity="0.55"/>`;
+        }
+      }
+
+      // Hardware
+      const HX = localHingeLeft ? sx + sw - sw * 0.13 : sx + sw * 0.13;
+      const HY = sy + sh * 0.45;
+      const HINGEX = localHingeLeft ? sx + 2 : sx + sw - 8;
+      const handleScale = sw / 280;
+
+      if (hwStyle === "lever") {
+        const lx = localHingeLeft ? HX - 30 * handleScale : HX + 8 * handleScale;
+        out += `<rect x="${HX - 9 * handleScale}" y="${HY - 26 * handleScale}" width="${18 * handleScale}" height="${52 * handleScale}" fill="url(#metal-${uniq})" rx="3"/>
+                <rect x="${HX - 7 * handleScale}" y="${HY - 24 * handleScale}" width="${14 * handleScale}" height="${48 * handleScale}" fill="${adj(hwc, 30)}" opacity="0.25" rx="2"/>
+                <circle cx="${HX}" cy="${HY + 16 * handleScale}" r="${4 * handleScale}" fill="${adj(hwc, -40)}"/>
+                <rect x="${lx}" y="${HY - 6 * handleScale}" width="${30 * handleScale}" height="${10 * handleScale}" fill="url(#metal-${uniq})" rx="5"/>
+                <circle cx="${localHingeLeft ? lx : lx + 30 * handleScale}" cy="${HY - 1 * handleScale}" r="${6 * handleScale}" fill="url(#metalSphere-${uniq})"/>`;
+      } else if (hwStyle === "knob") {
+        out += `<rect x="${HX - 6 * handleScale}" y="${HY - 22 * handleScale}" width="${12 * handleScale}" height="${44 * handleScale}" fill="url(#metal-${uniq})" rx="2"/>
+                <circle cx="${HX}" cy="${HY}" r="${15 * handleScale}" fill="url(#metalSphere-${uniq})"/>
+                <circle cx="${HX - 3 * handleScale}" cy="${HY - 3 * handleScale}" r="${4 * handleScale}" fill="${adj(hwc, 60)}" opacity="0.5"/>`;
+      } else if (hwStyle === "bar") {
+        out += `<rect x="${HX - 6 * handleScale}" y="${HY - 36 * handleScale}" width="${12 * handleScale}" height="${12 * handleScale}" fill="url(#metal-${uniq})" rx="2"/>
+                <rect x="${HX - 6 * handleScale}" y="${HY + 24 * handleScale}" width="${12 * handleScale}" height="${12 * handleScale}" fill="url(#metal-${uniq})" rx="2"/>
+                <rect x="${HX - 7 * handleScale}" y="${HY - 26 * handleScale}" width="${14 * handleScale}" height="${60 * handleScale}" fill="url(#metal-${uniq})" rx="6"/>
+                <rect x="${HX - 4 * handleScale}" y="${HY - 24 * handleScale}" width="${6 * handleScale}" height="${56 * handleScale}" fill="${adj(hwc, 35)}" opacity="0.3" rx="5"/>`;
+      } else if (hwStyle === "ring") {
+        out += `<circle cx="${HX}" cy="${HY}" r="${17 * handleScale}" fill="url(#metalSphere-${uniq})"/>
+                <circle cx="${HX}" cy="${HY}" r="${11 * handleScale}" fill="${dc}" stroke="${adj(hwc, -25)}" stroke-width="${1 * handleScale}"/>
+                <circle cx="${HX}" cy="${HY}" r="${4 * handleScale}" fill="${adj(hwc, -35)}"/>`;
+      }
+
+      // Hinges
+      const hingeYs = [sy + sh * 0.08, sy + sh * 0.5, sy + sh * 0.92];
+      if (styleForBay !== "barn") {
+        hingeYs.forEach(hy => {
+          out += `<rect x="${HINGEX}" y="${hy - 14}" width="6" height="28" fill="url(#metal-${uniq})" rx="0.5"/>
+                  <circle cx="${HINGEX + 3}" cy="${hy - 8}" r="0.8" fill="${adj(hwc, -45)}"/>
+                  <circle cx="${HINGEX + 3}" cy="${hy + 8}" r="0.8" fill="${adj(hwc, -45)}"/>`;
+        });
+      } else {
+        const trackY = doorBayY - 8;
+        out += `<rect x="${bay.x - 10}" y="${trackY - 4}" width="${bay.w + 20}" height="6" fill="${adj(hwc, -30)}"/>
+                <rect x="${bay.x - 10}" y="${trackY - 4}" width="${bay.w + 20}" height="2" fill="${adj(hwc, 20)}" opacity="0.5"/>
+                <circle cx="${sx + sw * 0.2}" cy="${trackY - 1}" r="6" fill="url(#metalSphere-${uniq})"/>
+                <circle cx="${sx + sw * 0.8}" cy="${trackY - 1}" r="6" fill="url(#metalSphere-${uniq})"/>`;
+      }
+
+      // Slab edge highlights
+      out += `<rect x="${sx}" y="${sy}" width="2" height="${sh}" fill="${hi}" opacity="0.4"/>
+              <rect x="${sx + sw - 1.5}" y="${sy}" width="1.5" height="${sh}" fill="${adj(dc, -50)}" opacity="0.5"/>`;
+
+      return out;
     }
 
-    // Lighting gradient overlay
-    slab += `
-      <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="url(#light-${uniq})"/>
-      <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="url(#ao-${uniq})"/>
-    `;
+    function drawSideliteBay(bay) {
+      const slabInset = bay.w * 0.06;
+      const sx = bay.x + slabInset;
+      const sy = doorBayY + slabInset * 0.4;
+      const sw = bay.w - slabInset * 2;
+      const sh = doorBayH - slabInset * 0.4;
+      let out = "";
+      // Frame around sidelite
+      out += `<rect x="${bay.x}" y="${doorBayY}" width="${bay.w}" height="${doorBayH}" fill="${frame}"/>`;
+      // Glass
+      const glassMode = sideliteGlass || "frosted";
+      out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="url(#glass-${uniq})"/>`;
+      if (glassMode === "frosted") {
+        out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="#EAEEF1" opacity="0.65"/>`;
+        for (let i = 1; i < 18; i++) {
+          const yy = sy + (sh * i / 18);
+          out += `<line x1="${sx}" y1="${yy}" x2="${sx + sw}" y2="${yy}" stroke="#fff" stroke-width="0.5" opacity="0.4"/>`;
+        }
+      } else if (glassMode === "decorative") {
+        // Stained-glass-look grid
+        const cols = 2, rows = 8;
+        for (let r = 0; r < rows; r++) {
+          const yy = sy + (sh * r / rows);
+          out += `<line x1="${sx}" y1="${yy}" x2="${sx + sw}" y2="${yy}" stroke="#7494AA" stroke-width="0.6" opacity="0.7"/>`;
+        }
+        for (let c = 1; c < cols; c++) {
+          const xx = sx + (sw * c / cols);
+          out += `<line x1="${xx}" y1="${sy}" x2="${xx}" y2="${sy + sh}" stroke="#7494AA" stroke-width="0.6" opacity="0.7"/>`;
+        }
+      } else {
+        // Clear — soft corner highlights
+        out += `<polygon points="${sx},${sy} ${sx + sw * 0.5},${sy} ${sx},${sy + sh * 0.35}" fill="#fff" opacity="0.18"/>`;
+      }
+      // Bevel
+      out += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="none" stroke="${adj(dc, -45)}" stroke-width="1" opacity="0.55"/>`;
+      out += `<line x1="${sx}" y1="${sy}" x2="${sx + sw}" y2="${sy}" stroke="${adj(dc, -55)}" stroke-width="1.2"/>`;
+      return out;
+    }
 
-    // ── Panel system ───────────────────────────────────────────
-    // A "panel" is a recessed inset — drawn as: dark shadow band on top+left,
-    // surface (same as door), highlight on bottom+right. Inner panel sits 4-6px in
-    // with a subtle bevel.
-    function panel(x, y, pw, ph, withGlass) {
+    function drawTransom() {
+      if (!hasTransom) return "";
+      const tx = fx, ty = fy, tw = fw, th = transomH - 4;
+      let out = "";
+      out += `<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" fill="${frame}"/>`;
+      const insetX = tw * 0.03, insetY = th * 0.18;
+      const ix = tx + insetX, iy = ty + insetY;
+      const iw = tw - insetX * 2, ih = th - insetY * 2;
+      if (transom === "half-round") {
+        const r = ih * 0.95;
+        out += `<defs><clipPath id="transom-clip-${uniq}"><path d="M${ix},${iy + ih} L${ix},${iy + ih - r * 0.1} Q${ix + iw/2},${iy - r * 0.4} ${ix + iw},${iy + ih - r * 0.1} L${ix + iw},${iy + ih} Z"/></clipPath></defs>`;
+        out += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="url(#glass-${uniq})" clip-path="url(#transom-clip-${uniq})"/>`;
+        // Radial mullions
+        for (let i = 1; i < 7; i++) {
+          const angle = Math.PI * (i / 7);
+          const x2 = ix + iw/2 + Math.cos(Math.PI + angle) * iw * 0.5;
+          const y2 = iy + ih + Math.sin(Math.PI + angle) * iw * 0.5;
+          out += `<line x1="${ix + iw/2}" y1="${iy + ih}" x2="${x2}" y2="${y2}" stroke="${adj(dc, -55)}" stroke-width="1" opacity="0.6" clip-path="url(#transom-clip-${uniq})"/>`;
+        }
+        out += `<path d="M${ix},${iy + ih - r * 0.1} Q${ix + iw/2},${iy - r * 0.4} ${ix + iw},${iy + ih - r * 0.1}" fill="none" stroke="${adj(dc, -55)}" stroke-width="1.5"/>`;
+      } else if (transom === "arched") {
+        out += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="url(#glass-${uniq})"/>`;
+        out += `<path d="M${ix},${iy + ih * 0.4} Q${ix + iw/2},${iy - ih * 0.1} ${ix + iw},${iy + ih * 0.4}" fill="none" stroke="${adj(dc, -55)}" stroke-width="1.2"/>`;
+      } else {
+        // Rectangular
+        out += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="url(#glass-${uniq})"/>`;
+        // Two mullions
+        out += `<line x1="${ix + iw/3}" y1="${iy}" x2="${ix + iw/3}" y2="${iy + ih}" stroke="${adj(dc, -55)}" stroke-width="1"/>`;
+        out += `<line x1="${ix + iw * 2/3}" y1="${iy}" x2="${ix + iw * 2/3}" y2="${iy + ih}" stroke="${adj(dc, -55)}" stroke-width="1"/>`;
+      }
+      out += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="none" stroke="${adj(dc, -55)}" stroke-width="1.2"/>`;
+      // Header rail under transom
+      out += `<rect x="${tx}" y="${ty + th}" width="${tw}" height="4" fill="${adj(frame, -10)}"/>`;
+      return out;
+    }
+
+    // ── Panel factory (shared between bays) ──
+    function panel(x, y, pw, ph, sx, sy, sw, sh, withGlass) {
       const inset = Math.max(3, Math.min(pw, ph) * 0.04);
-      const styleId = `${doorStyle}-${pw.toFixed(1)}`;
       let s = "";
-      // Recess: top + left shadow
       s += `<rect x="${x}" y="${y}" width="${pw}" height="${ph}" fill="${adj(dc, -30)}"/>`;
-      // Panel inner face
       const ix = x + inset, iy = y + inset, iw = pw - inset * 2, ih = ph - inset * 2;
       if (withGlass && glass !== "none") {
         s += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="url(#glass-${uniq})"/>`;
         if (glass === "frosted") {
           s += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="#EAEEF1" opacity="0.62"/>`;
-          // subtle reeded lines
           for (let i = 1; i < 9; i++) {
             const yy = iy + (ih * i / 9);
-            s += `<line x1="${ix}" y1="${yy}" x2="${ix + iw}" y2="${yy}" stroke="#fff" stroke-width="0.6" opacity="0.4"/>`;
+            s += `<line x1="${ix}" y1="${yy}" x2="${ix + iw}" y2="${yy}" stroke="white" stroke-width="0.6" opacity="0.4"/>`;
           }
         } else if (glass === "decorative") {
           s += `<line x1="${ix}" y1="${iy + ih * 0.5}" x2="${ix + iw}" y2="${iy + ih * 0.5}" stroke="#7494AA" stroke-width="0.8" opacity="0.6"/>`;
@@ -306,22 +550,18 @@
           s += `<ellipse cx="${ix + iw / 2}" cy="${iy + ih / 2}" rx="${iw * 0.28}" ry="${ih * 0.28}" stroke="#5A7A90" stroke-width="1" fill="none" opacity="0.7"/>`;
           s += `<ellipse cx="${ix + iw / 2}" cy="${iy + ih / 2}" rx="${iw * 0.16}" ry="${ih * 0.16}" stroke="#5A7A90" stroke-width="0.8" fill="none" opacity="0.55"/>`;
         } else {
-          // Clear — bright corner highlight
-          s += `<polygon points="${ix},${iy} ${ix + iw * 0.55},${iy} ${ix},${iy + ih * 0.45}" fill="#fff" opacity="0.25"/>`;
-          s += `<polygon points="${ix + iw * 0.7},${iy + ih * 0.6} ${ix + iw},${iy + ih * 0.6} ${ix + iw},${iy + ih}" fill="#fff" opacity="0.15"/>`;
+          s += `<polygon points="${ix},${iy} ${ix + iw * 0.55},${iy} ${ix},${iy + ih * 0.45}" fill="white" opacity="0.25"/>`;
+          s += `<polygon points="${ix + iw * 0.7},${iy + ih * 0.6} ${ix + iw},${iy + ih * 0.6} ${ix + iw},${iy + ih}" fill="white" opacity="0.15"/>`;
         }
       } else {
-        // wood inner panel: re-stamp grain
         s += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="${dc}"/>`;
         if (mat.wood) {
           s += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" filter="url(#grain-${uniq})" opacity="0.75"/>`;
         }
         s += `<rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="url(#light-${uniq})" opacity="0.5"/>`;
       }
-      // Bevel: dark top/left, light bottom/right
-      s += `<polygon points="${x},${y} ${x + pw},${y} ${ix + iw},${iy} ${ix},${iy} ${ix},${iy + ih} ${x},${y + ph}" fill="#000" opacity="0.22"/>`;
-      s += `<polygon points="${x + pw},${y} ${x + pw},${y + ph} ${x},${y + ph} ${ix},${iy + ih} ${ix + iw},${iy + ih} ${ix + iw},${iy}" fill="#fff" opacity="0.10"/>`;
-      // 1px outer highlight on bevel edges
+      s += `<polygon points="${x},${y} ${x + pw},${y} ${ix + iw},${iy} ${ix},${iy} ${ix},${iy + ih} ${x},${y + ph}" fill="black" opacity="0.22"/>`;
+      s += `<polygon points="${x + pw},${y} ${x + pw},${y + ph} ${x},${y + ph} ${ix},${iy + ih} ${ix + iw},${iy + ih} ${ix + iw},${iy}" fill="white" opacity="0.10"/>`;
       s += `<line x1="${x}" y1="${y}" x2="${x + pw}" y2="${y}" stroke="${adj(dc, -55)}" stroke-width="0.8" opacity="0.6"/>`;
       s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + ph}" stroke="${adj(dc, -55)}" stroke-width="0.8" opacity="0.5"/>`;
       s += `<line x1="${x + pw}" y1="${y}" x2="${x + pw}" y2="${y + ph}" stroke="${hi}" stroke-width="0.6" opacity="0.35"/>`;
@@ -329,140 +569,34 @@
       return s;
     }
 
-    // Panel layout per style
-    const PM = sw * 0.05, PG = sw * 0.04;
-    const PX1 = sx + PM;
-    const PW2 = (sw - PM * 2 - PG) / 2;
-    const PX2 = PX1 + PW2 + PG;
-    const PYS = sy + PM;
-    const PAVAIL = sh - PM * 2;
-    let panels = "";
-
-    if (doorStyle === "two-panel") {
-      const ph = (PAVAIL - PG) / 2;
-      panels += panel(PX1, PYS, sw - PM * 2, ph);
-      panels += panel(PX1, PYS + ph + PG, sw - PM * 2, ph);
-    } else if (doorStyle === "four-panel") {
-      const ph = (PAVAIL - PG) / 2;
-      panels += panel(PX1, PYS, PW2, ph);
-      panels += panel(PX2, PYS, PW2, ph);
-      panels += panel(PX1, PYS + ph + PG, PW2, ph);
-      panels += panel(PX2, PYS + ph + PG, PW2, ph);
-    } else if (doorStyle === "six-panel") {
-      const th = PAVAIL * 0.21, mh = PAVAIL * 0.46, bh = PAVAIL - th - mh - PG * 2;
-      const y1 = PYS, y2 = y1 + th + PG, y3 = y2 + mh + PG;
-      panels += panel(PX1, y1, PW2, th);
-      panels += panel(PX2, y1, PW2, th);
-      panels += panel(PX1, y2, PW2, mh, true);
-      panels += panel(PX2, y2, PW2, mh, true);
-      panels += panel(PX1, y3, PW2, bh);
-      panels += panel(PX2, y3, PW2, bh);
-    } else if (doorStyle === "craftsman") {
-      const th = PAVAIL * 0.28, bh = PAVAIL - th - PG;
-      panels += panel(PX1, PYS, PW2, th, true);
-      panels += panel(PX2, PYS, PW2, th, true);
-      panels += panel(PX1, PYS + th + PG, sw - PM * 2, bh);
-    } else if (doorStyle === "arch") {
-      const ax = PX1, ay = PYS;
-      const aw = sw - PM * 2, ah = PAVAIL;
-      const ar = aw * 0.45;
-      const clipId = `arch-clip-${uniq}`;
-      panels += `<defs><clipPath id="${clipId}"><path d="M${ax},${ay + ar} Q${ax + aw/2},${ay - ar * 0.3} ${ax + aw},${ay + ar} L${ax + aw},${ay + ah} L${ax},${ay + ah} Z"/></clipPath></defs>`;
-      panels += `<rect x="${ax}" y="${ay}" width="${aw}" height="${ah}" fill="${adj(dc, -30)}" clip-path="url(#${clipId})"/>`;
-      const inset = 8;
-      panels += `<rect x="${ax + inset}" y="${ay + inset}" width="${aw - inset * 2}" height="${ah - inset * 2}" fill="${dc}" clip-path="url(#${clipId})"/>`;
-      if (glass !== "none") {
-        panels += `<rect x="${ax + inset}" y="${ay + ar * 0.4}" width="${aw - inset * 2}" height="${ah - ar * 0.4 - inset}" fill="url(#glass-${uniq})" clip-path="url(#${clipId})"/>`;
-      }
-      panels += `<path d="M${ax},${ay + ar} Q${ax + aw/2},${ay - ar * 0.3} ${ax + aw},${ay + ar}" stroke="${adj(dc, -55)}" stroke-width="1.4" fill="none" opacity="0.7"/>`;
-    } else if (doorStyle === "dutch") {
-      const splitH = sh * 0.46, splitY = sy + splitH;
-      const th = splitH - PM * 1.5, bh = sh - splitH - PM * 1.5;
-      panels += panel(PX1, PYS, PW2, th);
-      panels += panel(PX2, PYS, PW2, th);
-      panels += `<rect x="${sx}" y="${splitY - 6}" width="${sw}" height="12" fill="${adj(frame, 8)}"/>`;
-      panels += `<rect x="${sx}" y="${splitY - 6}" width="${sw}" height="2" fill="${adj(dc, -45)}" opacity="0.6"/>`;
-      panels += `<rect x="${sx}" y="${splitY + 4}" width="${sw}" height="2" fill="${hi}" opacity="0.5"/>`;
-      panels += panel(PX1, splitY + 8, PW2, bh);
-      panels += panel(PX2, splitY + 8, PW2, bh);
-    } else if (doorStyle === "barn") {
-      const rh = sh * 0.04;
-      const ty = sy + sh * 0.06, by = sy + sh - sh * 0.06 - rh;
-      panels += `<rect x="${sx + 12}" y="${ty}" width="${sw - 24}" height="${rh}" fill="${frame}" rx="2"/>`;
-      panels += `<rect x="${sx + 12}" y="${by}" width="${sw - 24}" height="${rh}" fill="${frame}" rx="2"/>`;
-      panels += `<line x1="${sx + 14}" y1="${ty + rh}" x2="${sx + sw - 14}" y2="${by}" stroke="${frame}" stroke-width="${sw * 0.035}" stroke-linecap="round"/>`;
-      panels += `<rect x="${sx + 12}" y="${ty}" width="${sw - 24}" height="3" fill="${adj(frame, 25)}" opacity="0.5" rx="2"/>`;
-      panels += `<rect x="${sx + 12}" y="${by}" width="${sw - 24}" height="3" fill="${adj(frame, 25)}" opacity="0.5" rx="2"/>`;
-      // Plank lines
-      for (let i = 1; i < 5; i++) {
-        const xx = sx + (sw * i / 5);
-        panels += `<line x1="${xx}" y1="${sy}" x2="${xx}" y2="${sy + sh}" stroke="${adj(dc, -50)}" stroke-width="1" opacity="0.55"/>`;
-      }
+    // Draw mullions between bays
+    let mullions = "";
+    for (let i = 0; i < bays.length - 1; i++) {
+      const mx = bays[i].x + bays[i].w;
+      mullions += `<rect x="${mx}" y="${doorBayY}" width="${mullion}" height="${doorBayH}" fill="${frame}"/>`;
+      mullions += `<rect x="${mx}" y="${doorBayY}" width="${mullion * 0.4}" height="${doorBayH}" fill="${adj(frame, -20)}" opacity="0.5"/>`;
     }
 
-    // ── Hardware (handle + hinges) ────────────────────────────
-    const HX = hingeLeft ? sx + sw - sw * 0.13 : sx + sw * 0.13;
-    const HY = sy + sh * 0.45;
-    const HINGEX = hingeLeft ? sx + 2 : sx + sw - 8;
-    const handleScale = sw / 280;
+    // Render all bays
+    let bayContent = "";
+    bays.forEach((bay, idx) => {
+      if (bay.type === "door")     bayContent += drawDoorBay(bay, idx);
+      else if (bay.type === "sidelite") bayContent += drawSideliteBay(bay);
+    });
 
-    let hardware = "";
-    if (hwStyle === "lever") {
-      const lx = hingeLeft ? HX - 30 * handleScale : HX + 8 * handleScale;
-      hardware += `
-        <rect x="${HX - 9 * handleScale}" y="${HY - 26 * handleScale}" width="${18 * handleScale}" height="${52 * handleScale}" fill="url(#metal-${uniq})" rx="3"/>
-        <rect x="${HX - 7 * handleScale}" y="${HY - 24 * handleScale}" width="${14 * handleScale}" height="${48 * handleScale}" fill="${adj(hwc, 30)}" opacity="0.25" rx="2"/>
-        <circle cx="${HX}" cy="${HY + 16 * handleScale}" r="${4 * handleScale}" fill="${adj(hwc, -40)}"/>
-        <rect x="${lx}" y="${HY - 6 * handleScale}" width="${30 * handleScale}" height="${10 * handleScale}" fill="url(#metal-${uniq})" rx="5"/>
-        <circle cx="${hingeLeft ? lx : lx + 30 * handleScale}" cy="${HY - 1 * handleScale}" r="${6 * handleScale}" fill="url(#metalSphere-${uniq})"/>
-      `;
-    } else if (hwStyle === "knob") {
-      hardware += `
-        <rect x="${HX - 6 * handleScale}" y="${HY - 22 * handleScale}" width="${12 * handleScale}" height="${44 * handleScale}" fill="url(#metal-${uniq})" rx="2"/>
-        <circle cx="${HX}" cy="${HY}" r="${15 * handleScale}" fill="url(#metalSphere-${uniq})"/>
-        <circle cx="${HX - 3 * handleScale}" cy="${HY - 3 * handleScale}" r="${4 * handleScale}" fill="${adj(hwc, 60)}" opacity="0.5"/>
-      `;
-    } else if (hwStyle === "bar") {
-      hardware += `
-        <rect x="${HX - 6 * handleScale}" y="${HY - 36 * handleScale}" width="${12 * handleScale}" height="${12 * handleScale}" fill="url(#metal-${uniq})" rx="2"/>
-        <rect x="${HX - 6 * handleScale}" y="${HY + 24 * handleScale}" width="${12 * handleScale}" height="${12 * handleScale}" fill="url(#metal-${uniq})" rx="2"/>
-        <rect x="${HX - 7 * handleScale}" y="${HY - 26 * handleScale}" width="${14 * handleScale}" height="${60 * handleScale}" fill="url(#metal-${uniq})" rx="6"/>
-        <rect x="${HX - 4 * handleScale}" y="${HY - 24 * handleScale}" width="${6 * handleScale}" height="${56 * handleScale}" fill="${adj(hwc, 35)}" opacity="0.3" rx="5"/>
-      `;
-    } else if (hwStyle === "ring") {
-      hardware += `
-        <circle cx="${HX}" cy="${HY}" r="${17 * handleScale}" fill="url(#metalSphere-${uniq})"/>
-        <circle cx="${HX}" cy="${HY}" r="${11 * handleScale}" fill="${dc}" stroke="${adj(hwc, -25)}" stroke-width="${1 * handleScale}"/>
-        <circle cx="${HX}" cy="${HY}" r="${4 * handleScale}" fill="${adj(hwc, -35)}"/>
-      `;
-    }
-
-    // Hinges (3 of them)
-    const hingeYs = [sy + sh * 0.08, sy + sh * 0.5, sy + sh * 0.92];
-    let hinges = "";
-    if (doorStyle !== "barn") {
-      hingeYs.forEach(hy => {
-        hinges += `
-          <rect x="${HINGEX}" y="${hy - 14}" width="6" height="28" fill="url(#metal-${uniq})" rx="0.5"/>
-          <circle cx="${HINGEX + 3}" cy="${hy - 8}" r="0.8" fill="${adj(hwc, -45)}"/>
-          <circle cx="${HINGEX + 3}" cy="${hy + 8}" r="0.8" fill="${adj(hwc, -45)}"/>
-        `;
-      });
-    } else {
-      // Barn track + rollers
-      const trackY = fy - 8;
-      hinges += `
-        <rect x="${fx - 10}" y="${trackY - 4}" width="${fw + 20}" height="6" fill="${adj(hwc, -30)}"/>
-        <rect x="${fx - 10}" y="${trackY - 4}" width="${fw + 20}" height="2" fill="${adj(hwc, 20)}" opacity="0.5"/>
-        <circle cx="${sx + sw * 0.2}" cy="${trackY - 1}" r="6" fill="url(#metalSphere-${uniq})"/>
-        <circle cx="${sx + sw * 0.8}" cy="${trackY - 1}" r="6" fill="url(#metalSphere-${uniq})"/>
-      `;
-    }
-
-    // ── Floor reflection (subtle) ─────────────────────────────
+    // ── Floor reflection (subtle, spanning all door bays) ─────
+    let reflectionContent = "";
+    bays.filter(b => b.type === "door").forEach(bay => {
+      const slabInset = bay.w * 0.035;
+      const sx = bay.x + slabInset;
+      const sy = doorBayY + slabInset * 0.5;
+      const sw = bay.w - slabInset * 2;
+      const sh = doorBayH - slabInset * 0.5;
+      reflectionContent += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="${dc}"/>`;
+    });
     const reflection = `
       <g transform="translate(0, ${floorY * 2}) scale(1, -1)" opacity="0.18" clip-path="inset(${h - floorY}px 0 0 0)">
-        <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="${dc}"/>
+        ${reflectionContent}
       </g>
       <rect x="0" y="${floorY}" width="${w}" height="${(h - floorY) * 0.6}" fill="url(#reflect-${uniq})"/>
     `;
@@ -472,13 +606,9 @@
       ${backdrop}
       ${casing}
       ${reflection}
-      ${slab}
-      ${panels}
-      ${hardware}
-      ${hinges}
-      <!-- Final edge sheen on door -->
-      <rect x="${sx}" y="${sy}" width="2" height="${sh}" fill="${hi}" opacity="0.4"/>
-      <rect x="${sx + sw - 1.5}" y="${sy}" width="1.5" height="${sh}" fill="${adj(dc, -50)}" opacity="0.5"/>
+      ${drawTransom()}
+      ${bayContent}
+      ${mullions}
     `;
   }
 
