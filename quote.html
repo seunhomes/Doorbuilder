@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Request a quote · Toronto Custom Doors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  body { background: var(--cream); }
+
+  .quote-page {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    min-height: calc(100vh - 70px);
+  }
+  @media (max-width: 1000px) { .quote-page { grid-template-columns: 1fr; } }
+
+  /* ── Side: configuration summary ─────────────── */
+  .quote-aside {
+    background: var(--ink);
+    color: var(--linen);
+    padding: 64px 56px;
+    position: sticky;
+    top: 70px;
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+  @media (max-width: 1000px) { .quote-aside { position: relative; top: 0; height: auto; padding: 48px 24px; } }
+  .quote-aside .eyebrow { color: var(--brass); }
+  .quote-aside h1 {
+    font-family: var(--serif);
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 400;
+    line-height: 1;
+    margin: 12px 0 32px;
+    color: var(--paper);
+    letter-spacing: -0.02em;
+  }
+  .quote-aside h1 em { font-style: italic; }
+  .quote-aside .sub { color: rgba(244,237,225,0.6); max-width: 380px; }
+
+  .quote-preview {
+    margin: 48px 0;
+    aspect-ratio: 4 / 5;
+    background: radial-gradient(circle at 50% 40%, #EFE6D4 0%, #D9CDB6 55%, #A89678 100%);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .quote-preview svg { width: 100%; height: 100%; display: block; }
+
+  .quote-summary { margin-bottom: 32px; }
+  .quote-summary .name {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 500;
+    margin: 0 0 4px;
+  }
+  .quote-summary .style {
+    color: rgba(244,237,225,0.55);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .quote-summary .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(244,237,225,0.08);
+    font-size: 13px;
+  }
+  .quote-summary .k {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(244,237,225,0.55);
+  }
+  .quote-summary .v { color: var(--paper); }
+
+  .quote-totals {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(244,237,225,0.16);
+  }
+  .quote-totals .grand {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(244,237,225,0.16);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .quote-totals .grand .lbl {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(244,237,225,0.6);
+  }
+  .quote-totals .grand .amt {
+    font-family: var(--serif);
+    font-size: clamp(28px, 3vw, 40px);
+    color: var(--paper);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .quote-totals .line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    padding: 6px 0;
+    color: rgba(244,237,225,0.7);
+  }
+  .quote-totals .line span:first-child { flex-shrink: 0; }
+  .quote-totals .line span:last-child { white-space: nowrap; }
+  .edit-link {
+    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--brass);
+    font-size: 13px;
+    border-bottom: 1px solid var(--brass);
+    padding-bottom: 2px;
+    text-decoration: none;
+  }
+  .edit-link svg { width: 12px; height: 12px; }
+
+  /* ── Main: form ───────────────────────────── */
+  .quote-form {
+    padding: 64px 56px 96px;
+    background: var(--paper);
+  }
+  @media (max-width: 1000px) { .quote-form { padding: 48px 24px 64px; } }
+
+  .form-steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--linen);
+  }
+  .form-step {
+    flex: 1;
+    padding: 16px 8px 20px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .form-step.active {
+    border-bottom-color: var(--ink);
+  }
+  .form-step.done {
+    border-bottom-color: var(--mocha);
+  }
+  .form-step .num {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--mocha);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-step.done .num::after {
+    content: "✓";
+    color: var(--sage);
+    font-size: 12px;
+  }
+  .form-step .lbl {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--mocha);
+    margin-top: 4px;
+    line-height: 1.1;
+  }
+  .form-step.active .lbl,
+  .form-step.done .lbl { color: var(--ink); }
+
+  .form-panel { display: none; }
+  .form-panel.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+
+  .form-panel h2 {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 500;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .form-panel h2 em { font-style: italic; }
+  .form-panel .intro {
+    color: var(--mocha);
+    margin: 0 0 40px;
+    font-size: 15px;
+  }
+
+  .field { margin-bottom: 28px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+    margin-bottom: 8px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--stone);
+    background: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink);
+    border-radius: 2px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: var(--ink);
+    background: var(--paper);
+  }
+  .field input.error, .field textarea.error {
+    border-color: var(--rust);
+  }
+  .field .helper {
+    font-size: 12px;
+    color: var(--mocha);
+    margin-top: 6px;
+  }
+  .field .err {
+    font-size: 12px;
+    color: var(--rust);
+    margin-top: 6px;
+    display: none;
+  }
+  .field.invalid .err { display: block; }
+
+  /* Radio cards */
+  .radio-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 600px) { .radio-cards { grid-template-columns: 1fr; } }
+  .radio-card {
+    border: 1px solid var(--stone);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 2px;
+    background: var(--bone);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .radio-card:hover { border-color: var(--mocha); }
+  .radio-card.selected {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink) inset;
+    background: var(--paper);
+  }
+  .radio-card__check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--stone);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+  }
+  .radio-card.selected .radio-card__check {
+    border-color: var(--ink);
+    background: var(--ink);
+  }
+  .radio-card.selected .radio-card__check::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    background: var(--paper);
+    border-radius: 50%;
+  }
+  .radio-card__title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0 0 4px;
+  }
+  .radio-card__desc {
+    font-size: 13px;
+    color: var(--mocha);
+    margin: 0 0 6px;
+    line-height: 1.45;
+  }
+  .radio-card__price {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.06em;
+  }
+
+  /* Step nav */
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--linen);
+  }
+  .form-actions .btn { padding: 14px 24px; }
+
+  /* Success state */
+  .success-panel {
+    text-align: center;
+    padding: 48px 24px;
+  }
+  .success-panel .check {
+    width: 72px; height: 72px;
+    background: var(--sage);
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper);
+  }
+  .success-panel .check svg { width: 36px; height: 36px; }
+  .success-panel h2 { margin-bottom: 16px; }
+  .success-panel .next-steps {
+    margin: 48px auto 0;
+    max-width: 460px;
+    text-align: left;
+    background: var(--bone);
+    border: 1px solid var(--linen);
+    padding: 24px;
+    border-radius: 2px;
+  }
+  .success-panel .next-steps h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+    margin: 0 0 16px;
+    font-weight: 400;
+  }
+  .success-panel .next-steps li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dotted var(--linen);
+    font-size: 14px;
+    align-items: flex-start;
+  }
+  .success-panel .next-steps li:last-child { border: 0; }
+  .success-panel .next-steps li .day {
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+    min-width: 64px;
+    padding-top: 2px;
+  }
+
+  /* QR code box for AR */
+  .qr-card {
+    margin-top: 28px;
+    background: var(--bone);
+    border: 1px solid var(--linen);
+    padding: 24px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  .qr-box {
+    width: 80px;
+    height: 80px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 2px;
+    position: relative;
+  }
+  .qr-box svg { width: 60px; height: 60px; }
+  .qr-card h3 {
+    font-family: var(--serif);
+    font-size: 18px;
+    margin: 0 0 4px;
+    font-weight: 500;
+  }
+  .qr-card p {
+    font-size: 13px;
+    color: var(--mocha);
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<div data-partial="nav" data-active="quote"></div>
+
+<div class="quote-page">
+
+  <!-- ── Aside: door + summary ──────────────────── -->
+  <aside class="quote-aside">
+    <div class="eyebrow">Your design</div>
+    <h1>The <em id="doorName">Sterling</em></h1>
+    <p class="sub">Locked in. Edit any spec from the configurator if you'd like to change something before quote.</p>
+
+    <div class="quote-preview">
+      <svg id="quotePreview" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice"></svg>
+    </div>
+
+    <div class="quote-summary" id="quoteSummary"></div>
+
+    <div class="quote-totals">
+      <div class="line"><span>Door</span><span id="basePrice">$1,199</span></div>
+      <div class="line"><span>Site measure</span><span>$120</span></div>
+      <div class="line"><span>White-glove install</span><span id="installPrice">$480</span></div>
+      <div class="line"><span>HST (13%)</span><span id="tax">$233</span></div>
+      <div class="grand">
+        <span class="lbl">Quote total</span>
+        <span class="amt" id="grandTotal">$2,032</span>
+      </div>
+    </div>
+
+    <a href="configurator.html" class="edit-link" id="editLink">
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 9l7-7 1 1-7 7-1.5.5z"/></svg>
+      Edit configuration
+    </a>
+  </aside>
+
+  <!-- ── Main: form ────────────────────────────── -->
+  <main class="quote-form">
+    <div class="form-steps">
+      <button class="form-step active" data-step="1">
+        <div class="num">Step 1</div>
+        <div class="lbl">Site</div>
+      </button>
+      <button class="form-step" data-step="2">
+        <div class="num">Step 2</div>
+        <div class="lbl">Install</div>
+      </button>
+      <button class="form-step" data-step="3">
+        <div class="num">Step 3</div>
+        <div class="lbl">You</div>
+      </button>
+      <button class="form-step" data-step="4">
+        <div class="num">Step 4</div>
+        <div class="lbl">Review</div>
+      </button>
+    </div>
+
+    <!-- Step 1: Site -->
+    <section class="form-panel active" data-panel="1">
+      <h2>Where's it <em>going</em>?</h2>
+      <p class="intro">A few details about the opening so we can quote accurately. We'll confirm everything with a site visit.</p>
+
+      <div class="field">
+        <label for="address">Address</label>
+        <input type="text" id="address" placeholder="184 Sterling Rd., Toronto"/>
+        <div class="err">Please enter the install address.</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="opening">Door opening</label>
+          <select id="opening">
+            <option>Front entry — exterior</option>
+            <option>Interior — bedroom / study</option>
+            <option>Interior — pantry / closet</option>
+            <option>Interior — passage</option>
+            <option>Other / not sure</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="year">House built</label>
+          <select id="year">
+            <option>Pre-1900 (Victorian / Edwardian)</option>
+            <option>1900–1940 (Pre-war)</option>
+            <option>1940–1980</option>
+            <option>1980–2010</option>
+            <option>2010+</option>
+            <option>Not sure</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="notes">Anything we should know about the opening?</label>
+        <textarea id="notes" rows="3" placeholder="Out of square? Heritage trim to match? Tight floor clearance?"></textarea>
+        <div class="helper">Optional — we'll catch everything on the site visit.</div>
+      </div>
+
+      <div class="form-actions">
+        <a href="configurator.html" class="btn btn--ghost">← Back to design</a>
+        <button class="btn btn--primary" onclick="goToStep(2)">Continue
+          <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: Install -->
+    <section class="form-panel" data-panel="2">
+      <h2>How would you like it <em>delivered</em>?</h2>
+      <p class="intro">All doors include site measurement. Install is optional but recommended — we know how to hang our own doors.</p>
+
+      <div class="radio-cards" id="installCards">
+        <button class="radio-card selected" data-install="white-glove" data-price="480">
+          <span class="radio-card__check"></span>
+          <div>
+            <h3 class="radio-card__title">White-glove install</h3>
+            <p class="radio-card__desc">Our crew comes, hangs the door, mortises the hinges and strike, and walks you through care and maintenance.</p>
+            <span class="radio-card__price">+ $480 · GTA only</span>
+          </div>
+        </button>
+        <button class="radio-card" data-install="dropoff" data-price="0">
+          <span class="radio-card__check"></span>
+          <div>
+            <h3 class="radio-card__title">Doorstep delivery</h3>
+            <p class="radio-card__desc">We pre-fit hardware in the shop, drop the door at your address, and hand off to your contractor.</p>
+            <span class="radio-card__price">Included · You'll need a hangmaker</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="field" style="margin-top: 32px;">
+        <label>Preferred install window</label>
+        <div class="field-row">
+          <input type="month" id="month" min="2026-06" max="2027-12" value="2026-09"/>
+          <select id="urgency">
+            <option>Flexible — just want the right door</option>
+            <option>Tied to a renovation milestone</option>
+            <option>Tied to a sale / closing</option>
+            <option>Gift — has to land by a date</option>
+          </select>
+        </div>
+        <div class="helper">Lead time is 12 weeks from deposit; rush jobs add 30% but cap at 8 weeks.</div>
+      </div>
+
+      <div class="qr-card">
+        <div class="qr-box">
+          <svg viewBox="0 0 60 60" fill="currentColor">
+            <rect x="6" y="6" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"/>
+            <rect x="40" y="6" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"/>
+            <rect x="6" y="40" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"/>
+            <rect x="11" y="11" width="4" height="4"/><rect x="45" y="11" width="4" height="4"/><rect x="11" y="45" width="4" height="4"/>
+            <rect x="26" y="6" width="3" height="3"/><rect x="32" y="6" width="3" height="3"/>
+            <rect x="6" y="26" width="3" height="3"/><rect x="6" y="32" width="3" height="3"/>
+            <rect x="26" y="26" width="3" height="3"/><rect x="33" y="33" width="3" height="3"/>
+            <rect x="40" y="40" width="3" height="3"/><rect x="46" y="46" width="6" height="6"/>
+            <rect x="26" y="40" width="3" height="3"/><rect x="40" y="26" width="3" height="3"/>
+            <rect x="33" y="26" width="3" height="3"/><rect x="26" y="33" width="3" height="3"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Try it on with AR</h3>
+          <p>Scan with your phone camera to view this exact door at scale in your doorway. Works on iOS 16+ and Android 12+.</p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" onclick="goToStep(1)">← Site</button>
+        <button class="btn btn--primary" onclick="goToStep(3)">Continue
+          <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 3: Contact -->
+    <section class="form-panel" data-panel="3">
+      <h2>And <em>you</em>?</h2>
+      <p class="intro">So we know where to send the quote. We never share your details — not even with the rest of the studio.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName"/>
+          <div class="err">Please enter your first name.</div>
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com"/>
+        <div class="err">Please enter a valid email.</div>
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" placeholder="(416) 555-0143"/>
+        <div class="helper">Optional. Only used for site measurement scheduling.</div>
+      </div>
+
+      <div class="field">
+        <label>How did you hear about us?</label>
+        <select id="referral">
+          <option>An architect or designer</option>
+          <option>A friend or family member</option>
+          <option>Walked by the shop</option>
+          <option>Instagram / Pinterest</option>
+          <option>Search engine</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" onclick="goToStep(2)">← Install</button>
+        <button class="btn btn--primary" onclick="goToStep(4)">Review
+          <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 4: Review -->
+    <section class="form-panel" data-panel="4" id="reviewPanel">
+      <h2>One last <em>look</em>.</h2>
+      <p class="intro">Quote arrives within one business day. No deposit until the site visit.</p>
+
+      <div id="reviewRows" style="border-top: 1px solid var(--linen);"></div>
+
+      <div class="field" style="margin-top: 32px;">
+        <label style="display:flex; align-items:flex-start; gap:12px; font-family: inherit; font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--ink);">
+          <input type="checkbox" id="terms" style="width: 18px; height: 18px; accent-color: var(--ink); margin-top: 2px;"/>
+          <span>I understand this is a quote request, not a binding order. A 50% deposit is required after site measurement to begin the build.</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" onclick="goToStep(3)">← You</button>
+        <button class="btn btn--primary" id="submitBtn" onclick="submitForm()">
+          Send to the studio
+          <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Success -->
+    <section class="form-panel" data-panel="5">
+      <div class="success-panel">
+        <div class="check">
+          <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="3"><path d="M8 18l7 7 13-15"/></svg>
+        </div>
+        <h2>Quote on the way.</h2>
+        <p style="color: var(--mocha); max-width: 480px; margin: 0 auto; font-size: 16px;">
+          We've logged your request as <strong style="font-family: var(--mono); color: var(--ink); letter-spacing: 0.08em;" id="orderRef">TCD-26-0481</strong>.
+          You'll have a written quote in your inbox by tomorrow afternoon.
+        </p>
+
+        <div class="next-steps">
+          <h3>What happens next</h3>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            <li><span class="day">Today</span><span>You'll receive a confirmation email with this configuration attached.</span></li>
+            <li><span class="day">Tomorrow</span><span>A studio principal reviews your brief and sends a written quote.</span></li>
+            <li><span class="day">Within a week</span><span>If the quote works, we book a site visit for measurement.</span></li>
+            <li><span class="day">12 weeks out</span><span>Install day. We hang the door, walk you through care, and hand over the maintenance kit.</span></li>
+          </ul>
+        </div>
+
+        <div style="margin-top: 40px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a href="configurator.html" class="btn btn--primary">
+            Design another door
+            <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+          </a>
+          <a href="index.html" class="btn btn--ghost">Back to home</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div data-partial="footer"></div>
+
+<script src="partials.js"></script>
+<script src="door-render.js"></script>
+<script>
+// ── Read configuration from URL ────────────────────────────
+const params = new URLSearchParams(window.location.search);
+const config = {
+  doorStyle: params.get("style") || "six-panel",
+  mat: params.get("mat") || "walnut",
+  hwStyle: params.get("hw") || "lever",
+  hwFinish: params.get("fin") || "brass",
+  glass: params.get("glass") || "none",
+  sizeIdx: parseInt(params.get("size") || "2", 10),
+  hingeLeft: (params.get("hinge") || "L") === "L",
+};
+const DATA = window.DOOR_DATA;
+
+const NAMES = {
+  "six-panel-walnut": "Sterling", "craftsman-oak": "Roncesvalles",
+  "arch-cherry": "Cabbagetown", "barn-oak": "Mill House",
+  "dutch-sage": "Leslieville", "flush-walnut": "Annex",
+  "two-panel-oak": "Wychwood", "four-panel-cherry": "Riverdale",
+};
+const name = NAMES[`${config.doorStyle}-${config.mat}`] || "Custom No. 47";
+
+const styleObj = DATA.DOOR_STYLES.find(s => s.id === config.doorStyle);
+const matObj   = DATA.MATERIALS.find(m => m.id === config.mat);
+const hwObj    = DATA.HARDWARE_STYLES.find(h => h.id === config.hwStyle);
+const finObj   = DATA.HARDWARE_FINISHES.find(f => f.id === config.hwFinish);
+const glObj    = DATA.GLASS_OPTIONS.find(g => g.id === config.glass);
+
+const doorPrice = DATA.BASE + styleObj.price + matObj.price + hwObj.price + glObj.price + DATA.SPRICES[config.sizeIdx];
+
+// State
+let installPrice = 480;
+function recalcTotals() {
+  const measure = 120;
+  const subtotal = doorPrice + measure + installPrice;
+  const tax = Math.round(subtotal * 0.13);
+  document.getElementById("basePrice").textContent = "$" + doorPrice.toLocaleString();
+  document.getElementById("installPrice").textContent = installPrice === 0 ? "Included" : "$" + installPrice.toLocaleString();
+  document.getElementById("tax").textContent = "$" + tax.toLocaleString();
+  document.getElementById("grandTotal").textContent = "$" + (subtotal + tax).toLocaleString();
+}
+
+// ── Render the preview & summary ───────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("doorName").textContent = name;
+  document.getElementById("quotePreview").innerHTML = window.renderDoorScene({
+    ...config, w: 400, h: 500, scene: "studio"
+  });
+  document.getElementById("editLink").href = "configurator.html?" + params.toString();
+
+  const summary = [
+    ["Silhouette", styleObj.label],
+    ["Material", matObj.label],
+    ["Hardware", hwObj.label + " · " + finObj.label],
+    ["Glass", glObj.label],
+    ["Width", DATA.SIZES[config.sizeIdx] + " × 80″"],
+    ["Swing", config.hingeLeft ? "Left-hand" : "Right-hand"],
+  ];
+  const sumEl = document.getElementById("quoteSummary");
+  sumEl.innerHTML = `<div class="name">The ${name}</div><div class="style">${styleObj.label} · ${matObj.label} · ${DATA.SIZES[config.sizeIdx]}</div>` +
+    summary.map(([k, v]) => `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  recalcTotals();
+});
+
+// ── Step navigation ────────────────────────────────────────
+let currentStep = 1;
+function goToStep(n) {
+  // Simple validation on outbound from current
+  if (n > currentStep) {
+    if (currentStep === 1 && !validateStep1()) return;
+    if (currentStep === 3 && !validateStep3()) return;
+  }
+  currentStep = n;
+  document.querySelectorAll(".form-step").forEach((el, i) => {
+    el.classList.toggle("active", (i + 1) === n);
+    el.classList.toggle("done", (i + 1) < n);
+  });
+  document.querySelectorAll(".form-panel").forEach(p => {
+    p.classList.toggle("active", parseInt(p.dataset.panel) === n);
+  });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (n === 4) renderReview();
+}
+document.querySelectorAll(".form-step").forEach(s => {
+  s.addEventListener("click", () => {
+    const n = parseInt(s.dataset.step);
+    if (n <= currentStep + 0) goToStep(n);
+  });
+});
+
+// ── Install radio cards ────────────────────────────────────
+document.querySelectorAll("#installCards .radio-card").forEach(card => {
+  card.addEventListener("click", () => {
+    document.querySelectorAll("#installCards .radio-card").forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    installPrice = parseInt(card.dataset.price, 10);
+    recalcTotals();
+  });
+});
+
+// ── Validation ──────────────────────────────────────────────
+function validateStep1() {
+  const addrField = document.getElementById("address");
+  const ok = addrField.value.trim().length > 4;
+  addrField.closest(".field").classList.toggle("invalid", !ok);
+  return ok;
+}
+function validateStep3() {
+  const first = document.getElementById("firstName");
+  const email = document.getElementById("email");
+  let ok = true;
+  if (first.value.trim().length < 1) {
+    first.closest(".field").classList.add("invalid"); ok = false;
+  } else { first.closest(".field").classList.remove("invalid"); }
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRe.test(email.value.trim())) {
+    email.closest(".field").classList.add("invalid"); ok = false;
+  } else { email.closest(".field").classList.remove("invalid"); }
+  return ok;
+}
+
+// ── Review render ──────────────────────────────────────────
+function renderReview() {
+  const v = {
+    address: document.getElementById("address").value,
+    opening: document.getElementById("opening").value,
+    year: document.getElementById("year").value,
+    notes: document.getElementById("notes").value || "—",
+    install: document.querySelector("#installCards .radio-card.selected").querySelector(".radio-card__title").textContent,
+    month: document.getElementById("month").value,
+    urgency: document.getElementById("urgency").value,
+    name: (document.getElementById("firstName").value + " " + document.getElementById("lastName").value).trim() || "—",
+    email: document.getElementById("email").value || "—",
+    phone: document.getElementById("phone").value || "—",
+    referral: document.getElementById("referral").value,
+  };
+
+  const rows = [
+    ["Address", v.address || "—"],
+    ["Opening", v.opening],
+    ["House", v.year],
+    ["Site notes", v.notes],
+    ["Delivery", v.install],
+    ["Target install", v.month],
+    ["Urgency", v.urgency],
+    ["Name", v.name],
+    ["Email", v.email],
+    ["Phone", v.phone],
+    ["Referral", v.referral],
+  ];
+  document.getElementById("reviewRows").innerHTML = rows.map(([k, val]) => `
+    <div style="display: grid; grid-template-columns: 160px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--linen); font-size: 14px;">
+      <span style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mocha); padding-top: 3px;">${k}</span>
+      <span style="color: var(--ink);">${val}</span>
+    </div>
+  `).join("");
+}
+
+// ── Submit ────────────────────────────────────────────────
+function submitForm() {
+  const terms = document.getElementById("terms");
+  if (!terms.checked) {
+    terms.parentElement.style.color = "var(--rust)";
+    return;
+  }
+  // Fake submission
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.innerHTML = "<span style='display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;'></span> Sending...";
+  setTimeout(() => {
+    document.getElementById("orderRef").textContent = "TCD-26-0" + (400 + Math.floor(Math.random() * 99));
+    goToStepForce(5);
+  }, 1100);
+}
+function goToStepForce(n) {
+  currentStep = n;
+  document.querySelectorAll(".form-step").forEach((el, i) => {
+    el.classList.toggle("active", (i + 1) === Math.min(n, 4));
+    el.classList.toggle("done", (i + 1) < Math.min(n, 4) || n === 5);
+  });
+  document.querySelectorAll(".form-panel").forEach(p => {
+    p.classList.toggle("active", parseInt(p.dataset.panel) === n);
+  });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+// Spin keyframes
+const style = document.createElement("style");
+style.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>

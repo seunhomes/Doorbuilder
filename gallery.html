@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gallery · Toronto Custom Doors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* ── Gallery ─────────────────────────────────── */
+  .gallery-hero {
+    padding: 80px 0 48px;
+  }
+  .gallery-hero__head {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 64px;
+    align-items: end;
+    margin-bottom: 48px;
+  }
+  @media (max-width: 820px) { .gallery-hero__head { grid-template-columns: 1fr; gap: 24px; } }
+  .gallery-hero h1 { margin: 0 0 8px; }
+  .gallery-hero .meta {
+    display: flex;
+    gap: 32px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+    padding-top: 32px;
+    border-top: 1px solid var(--stone);
+  }
+  .gallery-hero .meta div { font-family: var(--serif); font-size: 22px; color: var(--ink); letter-spacing: 0; text-transform: none; margin-top: 4px; }
+
+  /* ── Filter bar ───────────────────────────────── */
+  .filter-bar {
+    position: sticky;
+    top: 70px;
+    z-index: 30;
+    background: rgba(244, 237, 225, 0.92);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--stone);
+    border-bottom: 1px solid var(--stone);
+    padding: 16px 0;
+  }
+  .filter-bar__inner {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    overflow-x: auto;
+  }
+  .filter-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .filter-group__lbl {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+    margin-right: 4px;
+  }
+  .filter-chip {
+    padding: 6px 12px;
+    border: 1px solid var(--stone);
+    border-radius: 100px;
+    font-size: 12px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--espresso);
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .filter-chip:hover { border-color: var(--ink); }
+  .filter-chip.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* ── Gallery grid ─────────────────────────────── */
+  .gallery-grid {
+    padding: 64px 0 96px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 820px) { .gallery-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+
+  .gal {
+    overflow: hidden;
+    position: relative;
+    background: var(--linen);
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+  .gal:hover { transform: translateY(-2px); }
+  .gal svg { width: 100%; height: 100%; display: block; }
+  .gal__meta {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    color: var(--paper);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .gal__name {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.1;
+    margin-bottom: 2px;
+  }
+  .gal__spec {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .gal__price {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(244, 237, 225, 0.92);
+    backdrop-filter: blur(8px);
+    padding: 5px 10px;
+    border-radius: 100px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.06em;
+  }
+  @media (min-width: 821px) {
+    .gal--lg  { grid-column: span 6; aspect-ratio: 4 / 5; }
+    .gal--md  { grid-column: span 4; aspect-ratio: 3 / 4; }
+    .gal--sq  { grid-column: span 4; aspect-ratio: 1 / 1; }
+    .gal--tall { grid-column: span 3; aspect-ratio: 2 / 3; }
+    .gal--wide { grid-column: span 8; aspect-ratio: 16 / 10; }
+  }
+  @media (max-width: 820px) {
+    .gal { aspect-ratio: 3 / 4; }
+  }
+
+  .gal--lifestyle .gal__inner {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(135deg, rgba(31,24,19,0.06) 0 1px, transparent 1px 14px);
+  }
+
+  /* ── Section break ───────────────────────────── */
+  .feature-break {
+    background: var(--espresso);
+    color: var(--linen);
+    padding: 96px 0;
+  }
+  .feature-break .display { color: var(--paper); }
+  .feature-break__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  @media (max-width: 820px) { .feature-break__grid { grid-template-columns: 1fr; gap: 40px; } }
+  .feature-break img, .feature-break svg {
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    background: var(--ink);
+  }
+  .feature-break p {
+    color: rgba(244,237,225,0.75);
+    margin: 24px 0 32px;
+    max-width: 480px;
+    font-size: 17px;
+  }
+  .feature-break .eyebrow { color: var(--brass); }
+
+  /* ── Empty state when nothing matches ─────────── */
+  .empty {
+    grid-column: 1 / -1;
+    padding: 80px 0;
+    text-align: center;
+    color: var(--mocha);
+    font-family: var(--serif);
+    font-size: 22px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div data-partial="nav" data-active="gallery"></div>
+
+<section class="gallery-hero">
+  <div class="wrap">
+    <div class="gallery-hero__head">
+      <div>
+        <div class="eyebrow" style="margin-bottom:20px">Archive · 2018 → 2026</div>
+        <h1 class="display">From other<br/>front <em>steps</em>.</h1>
+      </div>
+      <div class="meta">
+        <div>
+          <span style="display:block">Doors built</span>
+          <div>240 in archive</div>
+        </div>
+        <div>
+          <span style="display:block">Cities</span>
+          <div>Toronto · GTA</div>
+        </div>
+        <div>
+          <span style="display:block">Filter</span>
+          <div id="filterCount">All</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="filter-bar">
+  <div class="wrap filter-bar__inner">
+    <div class="filter-group">
+      <span class="filter-group__lbl">Style</span>
+      <button class="filter-chip active" data-filter-style="">All</button>
+      <button class="filter-chip" data-filter-style="six-panel">6-Panel</button>
+      <button class="filter-chip" data-filter-style="four-panel">4-Panel</button>
+      <button class="filter-chip" data-filter-style="craftsman">Craftsman</button>
+      <button class="filter-chip" data-filter-style="arch">Arch</button>
+      <button class="filter-chip" data-filter-style="dutch">Dutch</button>
+      <button class="filter-chip" data-filter-style="barn">Barn</button>
+      <button class="filter-chip" data-filter-style="flush">Flush</button>
+    </div>
+    <div class="filter-group">
+      <span class="filter-group__lbl">Wood</span>
+      <button class="filter-chip active" data-filter-mat="">All</button>
+      <button class="filter-chip" data-filter-mat="walnut">Walnut</button>
+      <button class="filter-chip" data-filter-mat="oak">Oak</button>
+      <button class="filter-chip" data-filter-mat="cherry">Cherry</button>
+      <button class="filter-chip" data-filter-mat="maple">Maple</button>
+      <button class="filter-chip" data-filter-mat="painted">Painted</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="gallery-grid" id="grid">
+    <!-- Filled by JS -->
+  </div>
+</div>
+
+<section class="feature-break">
+  <div class="wrap">
+    <div class="feature-break__grid">
+      <div>
+        <svg id="featureSvg" viewBox="0 0 480 600" preserveAspectRatio="xMidYMid slice"></svg>
+      </div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:24px">Featured · Cabbagetown commission</div>
+        <h2 class="display">"Match the<br/>1898 transom,<br/>but in <em>walnut</em>."</h2>
+        <p>The Boyle residence's original arch transom had survived 128 years. The owners wanted a new door that mirrored its curve, but in walnut to play against the original stone. We milled the arch from a single board.</p>
+        <a href="configurator.html?style=arch&mat=walnut" class="btn btn--light">
+          Start with this design
+          <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="gallery-grid" id="grid2"></div>
+</div>
+
+<section style="padding: 120px 0; text-align: center; background: var(--cream);">
+  <div class="wrap">
+    <div class="eyebrow" style="margin-bottom:24px">Yours next</div>
+    <h2 class="display" style="margin-bottom:24px">Begin a door that belongs in our <em>archive</em>.</h2>
+    <a href="configurator.html" class="btn btn--primary" style="margin-top: 16px;">
+      Open the configurator
+      <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+    </a>
+  </div>
+</section>
+
+<div data-partial="footer"></div>
+
+<script src="partials.js"></script>
+<script src="door-render.js"></script>
+<script>
+const PORTFOLIO = [
+  { id: 1, name: "Sterling Rd. residence", neighbourhood: "Bloordale", style: "six-panel",  mat: "walnut",     hw: "lever", fin: "brass",  glass: "none",       size: "lg"  },
+  { id: 2, name: "Bain Co-op No. 17",     neighbourhood: "Riverdale", style: "craftsman",  mat: "oak",        hw: "knob",  fin: "mblack", glass: "frosted",   size: "md"  },
+  { id: 3, name: "Boyle residence",       neighbourhood: "Cabbagetown", style: "arch",      mat: "cherry",     hw: "lever", fin: "bronze",  glass: "clear",     size: "tall"},
+  { id: 4, name: "Sumach Studio",         neighbourhood: "Corktown",  style: "flush",      mat: "walnut",     hw: "bar",   fin: "mblack", glass: "none",      size: "md"  },
+  { id: 5, name: "Concord/Brock",         neighbourhood: "Bloordale", style: "four-panel", mat: "sage",       hw: "knob",  fin: "brass",  glass: "none",      size: "tall"},
+  { id: 6, name: "Roxton triplex",        neighbourhood: "Beaconsfield", style: "dutch",   mat: "oak",        hw: "ring",  fin: "nickel", glass: "clear",     size: "md"  },
+  { id: 7, name: "Galley Loft",           neighbourhood: "Roncesvalles", style: "barn",    mat: "oak",        hw: "bar",   fin: "bronze", glass: "none",      size: "wide"},
+  { id: 8, name: "Hewitt residence",      neighbourhood: "Annex",     style: "two-panel",  mat: "navy",       hw: "knob",  fin: "brass",  glass: "none",      size: "sq"  },
+  { id: 9, name: "Maitland atelier",      neighbourhood: "Cabbagetown", style: "six-panel",mat: "walnut",     hw: "lever", fin: "brass",  glass: "decorative",size: "md"  },
+  { id: 10,name: "Wright/Lansdowne",      neighbourhood: "Bloordale", style: "craftsman",  mat: "cherry",     hw: "lever", fin: "mblack", glass: "none",      size: "tall"},
+  { id: 11,name: "Markham St. row",       neighbourhood: "Mirvish Village", style: "arch", mat: "terracotta", hw: "ring",  fin: "brass",  glass: "frosted",   size: "tall"},
+  { id: 12,name: "Logan Co-op A",         neighbourhood: "Riverdale", style: "flush",      mat: "black",      hw: "bar",   fin: "mblack", glass: "none",      size: "md"  },
+  { id: 13,name: "Bain Co-op No. 22",     neighbourhood: "Riverdale", style: "six-panel",  mat: "white",      hw: "knob",  fin: "nickel", glass: "none",      size: "sq"  },
+  { id: 14,name: "Wallace Annex",         neighbourhood: "Junction",  style: "barn",       mat: "maple",      hw: "bar",   fin: "mblack", glass: "none",      size: "lg"  },
+  { id: 15,name: "Sherbourne pied-à-terre",neighbourhood: "Cabbagetown", style: "craftsman", mat: "charcoal", hw: "lever", fin: "brass",  glass: "clear",     size: "md"  },
+  { id: 16,name: "Brock laneway suite",   neighbourhood: "Bloordale", style: "two-panel",  mat: "sage",       hw: "ring",  fin: "bronze", glass: "none",      size: "tall"},
+];
+
+const MATERIAL_META = {
+  walnut: "Walnut", oak: "White Oak", cherry: "Cherry", maple: "Maple",
+  white: "Alabaster", black: "Midnight", navy: "Deep Navy",
+  sage: "Studio Sage", terracotta: "Terracotta", charcoal: "Charcoal",
+};
+const PAINT_IDS = ["white","black","navy","sage","terracotta","charcoal"];
+const STYLE_META = {
+  "flush":"Flush","two-panel":"2-Panel","four-panel":"4-Panel","six-panel":"6-Panel",
+  "craftsman":"Craftsman","arch":"Arch","dutch":"Dutch","barn":"Barn",
+};
+
+// Pricing rough estimate
+function estPrice(d) {
+  return 1000 + Math.round(((d.id * 137) % 600));
+}
+
+let activeStyle = "";
+let activeMat = "";
+
+function matches(d) {
+  if (activeStyle && d.style !== activeStyle) return false;
+  if (activeMat) {
+    if (activeMat === "painted") return PAINT_IDS.includes(d.mat);
+    return d.mat === activeMat;
+  }
+  return true;
+}
+
+function renderGrid() {
+  const filtered = PORTFOLIO.filter(matches);
+  document.getElementById("filterCount").textContent =
+    (!activeStyle && !activeMat) ? "All 240" : `${filtered.length} matches`;
+
+  const grids = [
+    { el: document.getElementById("grid"),  list: filtered.slice(0, 8) },
+    { el: document.getElementById("grid2"), list: filtered.slice(8) },
+  ];
+
+  grids.forEach(g => {
+    if (filtered.length === 0 && g === grids[0]) {
+      g.el.innerHTML = '<div class="empty">No doors match these filters. <a href="#" onclick="document.querySelectorAll(\'.filter-chip[data-filter-style=\\\'\\\']\')[0].click(); return false;" style="color:var(--mocha); text-decoration: underline;">Clear filters?</a></div>';
+      return;
+    }
+    g.el.innerHTML = g.list.map(d => `
+      <div class="gal gal--${d.size}" onclick="window.location.href='configurator.html?style=${d.style}&mat=${d.mat}&hw=${d.hw}&fin=${d.fin}&glass=${d.glass}'">
+        <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">${window.renderDoorScene({
+          doorStyle: d.style, mat: d.mat, hwStyle: d.hw, hwFinish: d.fin,
+          glass: d.glass, hingeLeft: (d.id % 2 === 0), scene: "studio", w: 400, h: 500
+        })}</svg>
+        <span class="gal__price">$${estPrice(d).toLocaleString()}</span>
+        <div class="gal__meta">
+          <div class="gal__name">${d.name}</div>
+          <div class="gal__spec">${STYLE_META[d.style]} · ${MATERIAL_META[d.mat]} · ${d.neighbourhood}</div>
+        </div>
+      </div>
+    `).join("");
+  });
+}
+
+// Filter chip handling
+document.querySelectorAll(".filter-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const group = chip.dataset.filterStyle !== undefined ? "style" : "mat";
+    const value = chip.dataset.filterStyle !== undefined ? chip.dataset.filterStyle : chip.dataset.filterMat;
+    if (group === "style") activeStyle = value;
+    else activeMat = value;
+    // toggle active class within group
+    const sel = group === "style" ? "[data-filter-style]" : "[data-filter-mat]";
+    document.querySelectorAll(".filter-chip" + sel).forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    renderGrid();
+  });
+});
+
+// Feature SVG
+document.addEventListener("DOMContentLoaded", () => {
+  const fsv = document.getElementById("featureSvg");
+  if (fsv) fsv.innerHTML = window.renderDoorScene({
+    doorStyle: "arch", mat: "walnut", hwStyle: "lever",
+    hwFinish: "brass", glass: "clear", hingeLeft: true,
+    scene: "studio", w: 480, h: 600,
+  });
+  renderGrid();
+});
+</script>
+
+</body>
+</html>

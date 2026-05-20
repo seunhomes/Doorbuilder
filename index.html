@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Toronto Custom Doors — Heritage hardwood doors, designed by you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* ── Home-specific ──────────────────────────────── */
+  .hero {
+    padding: 40px 0 100px;
+    background: var(--bone);
+    overflow: hidden;
+  }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(40px, 6vw, 96px);
+    align-items: end;
+    min-height: 78vh;
+  }
+  @media (max-width: 900px) {
+    .hero__grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+  .hero__copy { padding-top: 40px; }
+  .hero__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .hero__eyebrow .line {
+    height: 1px;
+    background: var(--stone);
+    flex: 1;
+    max-width: 60px;
+  }
+  .hero h1 {
+    margin: 0 0 32px;
+  }
+  .hero__lede {
+    max-width: 480px;
+    margin: 0 0 40px;
+  }
+  .hero__actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .hero__meta {
+    margin-top: 56px;
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--stone);
+    max-width: 520px;
+  }
+  .hero__meta .num {
+    font-family: var(--serif);
+    font-size: 36px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .hero__meta .lbl {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+  }
+
+  /* Hero image — stylized door in a doorway */
+  .hero__image {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background: linear-gradient(180deg, #E6DAC4 0%, #D8C9AE 100%);
+    overflow: hidden;
+  }
+  .hero__image svg.scene {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .hero__image .tag {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: rgba(31, 24, 19, 0.78);
+    padding: 12px 16px;
+    backdrop-filter: blur(8px);
+  }
+  .hero__image .tag b {
+    font-family: var(--serif);
+    font-size: 18px;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 500;
+  }
+
+  /* ── Marquee strip ─────────────────────────────── */
+  .strip {
+    padding: 28px 0;
+    border-top: 1px solid var(--stone);
+    border-bottom: 1px solid var(--stone);
+    background: var(--cream);
+  }
+  .strip__inner {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--espresso);
+    flex-wrap: wrap;
+  }
+  .strip__inner span { display: inline-flex; align-items: center; gap: 10px; }
+  .strip__inner svg { width: 14px; height: 14px; }
+
+  /* ── Collection ────────────────────────────────── */
+  .collection-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: end;
+    margin-bottom: 64px;
+  }
+  @media (max-width: 820px) { .collection-head { grid-template-columns: 1fr; } }
+  .collection-head p { max-width: 460px; color: var(--mocha); }
+
+  .doors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  @media (max-width: 900px) { .doors-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .doors-grid { grid-template-columns: 1fr; } }
+
+  .door-card {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.3s;
+  }
+  .door-card:hover { transform: translateY(-4px); }
+  .door-card__img {
+    aspect-ratio: 3 / 4;
+    background: var(--paper);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .door-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .door-card__name {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 500;
+  }
+  .door-card__price {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--mocha);
+  }
+  .door-card__meta {
+    font-size: 13px;
+    color: var(--mocha);
+    margin-top: 2px;
+  }
+
+  /* ── Process ───────────────────────────────────── */
+  .process {
+    background: var(--espresso);
+    color: var(--linen);
+  }
+  .process h2 { color: var(--paper); }
+  .process .eyebrow { color: var(--brass); }
+
+  .process-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 80px;
+    margin-top: 64px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .process-grid { grid-template-columns: 1fr; gap: 40px; } }
+
+  .process-photo {
+    aspect-ratio: 4 / 5;
+    background: linear-gradient(180deg, #4A3A2C 0%, #2A1F18 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .process-photo svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+  .process-photo .tag {
+    position: absolute;
+    left: 20px; top: 20px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(244, 237, 225, 0.7);
+  }
+
+  .steps { list-style: none; padding: 0; margin: 0; }
+  .step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 24px;
+    padding: 28px 0;
+    border-bottom: 1px solid rgba(244, 237, 225, 0.12);
+  }
+  .step:last-child { border-bottom: 0; }
+  .step__num {
+    font-family: var(--serif);
+    font-size: 36px;
+    line-height: 1;
+    color: var(--brass);
+    font-style: italic;
+  }
+  .step__title {
+    font-family: var(--serif);
+    font-size: 24px;
+    margin: 0 0 8px;
+    color: var(--paper);
+    font-weight: 500;
+  }
+  .step__body {
+    margin: 0;
+    color: rgba(244, 237, 225, 0.75);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Materials ─────────────────────────────────── */
+  .materials-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-top: 64px;
+  }
+  @media (max-width: 820px) { .materials-grid { grid-template-columns: 1fr 1fr; } }
+
+  .material-card {
+    background: var(--paper);
+    border: 1px solid var(--linen);
+    padding: 28px;
+  }
+  .material-card__swatch {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .material-card__name {
+    font-family: var(--serif);
+    font-size: 22px;
+    margin: 0 0 6px;
+    font-weight: 500;
+  }
+  .material-card__origin {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+    margin-bottom: 16px;
+  }
+  .material-card__desc {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--espresso);
+    margin: 0;
+  }
+
+  /* ── Testimonials ─────────────────────────────── */
+  .testimonials {
+    background: var(--cream);
+  }
+  .testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    margin-top: 64px;
+  }
+  @media (max-width: 900px) { .testimonial-grid { grid-template-columns: 1fr; } }
+
+  .testimonial blockquote {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0 0 24px;
+    font-style: italic;
+    color: var(--espresso);
+    text-wrap: pretty;
+  }
+  .testimonial__by {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--stone);
+  }
+  .testimonial__avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--linen);
+    border: 1px solid var(--stone);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    font-size: 16px;
+    color: var(--espresso);
+  }
+  .testimonial__name {
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .testimonial__role {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mocha);
+  }
+
+  /* ── CTA ───────────────────────────────────────── */
+  .cta-section {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+  }
+  .cta-section h2 { color: var(--paper); margin: 0 0 24px; }
+  .cta-section p {
+    color: rgba(244, 237, 225, 0.7);
+    max-width: 540px;
+    margin: 0 auto 40px;
+    font-size: 17px;
+  }
+  .cta-section .btn--light { padding: 18px 32px; font-size: 15px; }
+
+  /* — keep large doors crisp — */
+  .door-svg-wrap { width: 100%; height: 100%; display: block; }
+
+</style>
+</head>
+<body>
+
+<div data-partial="nav" data-active="home"></div>
+
+<!-- ─── HERO ─────────────────────────────────────────── -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero__grid">
+      <div class="hero__copy">
+        <div class="hero__eyebrow">
+          <span class="line"></span>
+          <span class="eyebrow">Made-to-order · Toronto</span>
+        </div>
+        <h1 class="display">
+          A door is the<br/>
+          first <em>handshake</em><br/>
+          of a home.
+        </h1>
+        <p class="lede hero__lede">
+          We've been making heritage hardwood doors in the Junction
+          since 1978. Design yours in our configurator, and we'll
+          mill, assemble and finish it by hand in twelve weeks.
+        </p>
+        <div class="hero__actions">
+          <a href="configurator.html" class="btn btn--primary">
+            Build your door
+            <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+          </a>
+          <a href="gallery.html" class="btn btn--ghost">See past work</a>
+        </div>
+        <div class="hero__meta">
+          <div>
+            <div class="num serif">3,400+</div>
+            <div class="lbl">Doors built</div>
+          </div>
+          <div>
+            <div class="num serif">12 wks</div>
+            <div class="lbl">Lead time</div>
+          </div>
+          <div>
+            <div class="num serif">FSC</div>
+            <div class="lbl">Certified woods</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__image" id="heroImage">
+        <svg class="scene" viewBox="0 0 600 750" preserveAspectRatio="xMidYMid slice" aria-label="A walnut six-panel door in a sunlit hallway"></svg>
+        <div class="tag">
+          <span>The Sterling</span>
+          <b>Walnut · 6-panel</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STRIP ────────────────────────────────────────── -->
+<div class="strip">
+  <div class="wrap strip__inner">
+    <span><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 7l3 3 7-7"/></svg> Solid hardwood, never veneer</span>
+    <span><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 7l3 3 7-7"/></svg> Mortise & tenon joinery</span>
+    <span><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 7l3 3 7-7"/></svg> 25-year structural warranty</span>
+    <span><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 7l3 3 7-7"/></svg> White-glove install in GTA</span>
+  </div>
+</div>
+
+<!-- ─── COLLECTION ──────────────────────────────────── -->
+<section>
+  <div class="wrap">
+    <div class="collection-head">
+      <div>
+        <div class="eyebrow" style="margin-bottom:24px">The Collection</div>
+        <h2 class="display">Eight silhouettes,<br/>endlessly <em>yours</em>.</h2>
+      </div>
+      <p>
+        Every door begins as one of eight time-tested silhouettes — Flush, 2-Panel,
+        4-Panel, 6-Panel, Craftsman, Arch Top, Dutch, or Barn. From there, the
+        material, hardware, glass and proportions are entirely your call.
+      </p>
+    </div>
+
+    <div class="doors-grid">
+      <a href="configurator.html?style=six-panel&mat=walnut" class="door-card">
+        <div class="door-card__img" data-door="six-panel" data-mat="walnut"></div>
+        <div class="door-card__head">
+          <span class="door-card__name">The Sterling</span>
+          <span class="door-card__price">from $1,200</span>
+        </div>
+        <div class="door-card__meta">6-panel · Walnut · Brass</div>
+      </a>
+      <a href="configurator.html?style=craftsman&mat=oak" class="door-card">
+        <div class="door-card__img" data-door="craftsman" data-mat="oak"></div>
+        <div class="door-card__head">
+          <span class="door-card__name">The Roncesvalles</span>
+          <span class="door-card__price">from $1,080</span>
+        </div>
+        <div class="door-card__meta">Craftsman · White oak · Black</div>
+      </a>
+      <a href="configurator.html?style=arch&mat=cherry" class="door-card">
+        <div class="door-card__img" data-door="arch" data-mat="cherry"></div>
+        <div class="door-card__head">
+          <span class="door-card__name">The Cabbagetown</span>
+          <span class="door-card__price">from $1,340</span>
+        </div>
+        <div class="door-card__meta">Arch top · Cherry · Bronze</div>
+      </a>
+      <a href="configurator.html?style=barn&mat=oak" class="door-card">
+        <div class="door-card__img" data-door="barn" data-mat="oak"></div>
+        <div class="door-card__head">
+          <span class="door-card__name">The Mill House</span>
+          <span class="door-card__price">from $1,420</span>
+        </div>
+        <div class="door-card__meta">Barn · Reclaimed oak · Bar pull</div>
+      </a>
+      <a href="configurator.html?style=dutch&mat=sage" class="door-card">
+        <div class="door-card__img" data-door="dutch" data-mat="sage"></div>
+        <div class="door-card__head">
+          <span class="door-card__name">The Leslieville</span>
+          <span class="door-card__price">from $1,260</span>
+        </div>
+        <div class="door-card__meta">Dutch · Sage · Brass ring</div>
+      </a>
+      <a href="configurator.html?style=flush&mat=walnut" class="door-card">
+        <div class="door-card__img" data-door="flush" data-mat="walnut"></div>
+        <div class="door-card__head">
+          <span class="door-card__name">The Annex</span>
+          <span class="door-card__price">from $980</span>
+        </div>
+        <div class="door-card__meta">Flush · Walnut · Black bar</div>
+      </a>
+    </div>
+
+    <div style="margin-top: 64px; text-align:center;">
+      <a href="gallery.html" class="btn btn--ghost">
+        Browse all 240 doors in the archive
+        <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROCESS ─────────────────────────────────────── -->
+<section class="process">
+  <div class="wrap">
+    <div style="max-width: 560px;">
+      <div class="eyebrow" style="margin-bottom:24px">The Process</div>
+      <h2 class="display">Twelve weeks,<br/>one door, two <em>hands</em>.</h2>
+    </div>
+
+    <div class="process-grid">
+      <div class="process-photo">
+        <svg viewBox="0 0 480 600" preserveAspectRatio="xMidYMid slice" id="processPhoto"></svg>
+        <span class="tag">In the shop · Sterling Rd.</span>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <span class="step__num">01</span>
+          <div>
+            <h3 class="step__title">You design</h3>
+            <p class="step__body">Use the configurator to choose silhouette, material, hardware and glass. Save and share the link with your architect or partner — no signup needed.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">02</span>
+          <div>
+            <h3 class="step__title">We measure</h3>
+            <p class="step__body">A site visit anywhere in the GTA. We document the rough opening, jamb depth, floor pitch and prevailing light — every door is built to its exact opening.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">03</span>
+          <div>
+            <h3 class="step__title">We mill</h3>
+            <p class="step__body">Hardwood is rough-cut, kiln-stabilised, then milled to spec. Stiles and rails are joined with traditional mortise-and-tenon. No MDF, no veneer, no shortcuts.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">04</span>
+          <div>
+            <h3 class="step__title">We finish & hang</h3>
+            <p class="step__body">Eight coats of conversion varnish, sanded between each. Hardware is dry-fit, hinges mortised, and the door is hung by our install crew with a 25-year warranty.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ─── MATERIALS ───────────────────────────────────── -->
+<section>
+  <div class="wrap">
+    <div class="collection-head">
+      <div>
+        <div class="eyebrow" style="margin-bottom:24px">Material Sourcing</div>
+        <h2 class="display">Wood with a<br/>paper <em>trail</em>.</h2>
+      </div>
+      <p>
+        Every species is FSC-certified and traceable to the forest of harvest.
+        We work exclusively with mills within a 600-km radius — most of our
+        hardwood is felled in the Algonquin and Frontenac highlands.
+      </p>
+    </div>
+
+    <div class="materials-grid">
+      <div class="material-card">
+        <div class="material-card__swatch" style="background:#BF934A; background-image: repeating-linear-gradient(96deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 9px), repeating-linear-gradient(96deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 5px);"></div>
+        <h3 class="material-card__name">White Oak</h3>
+        <div class="material-card__origin">Frontenac, ON · 280 km</div>
+        <p class="material-card__desc">Tight grain, ammonia-fumed for warmth. Our most popular hardwood — it dents less than walnut and ages to honey.</p>
+      </div>
+      <div class="material-card">
+        <div class="material-card__swatch" style="background:#4A2C1A; background-image: repeating-linear-gradient(92deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 7px), repeating-linear-gradient(92deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 11px);"></div>
+        <h3 class="material-card__name">Walnut</h3>
+        <div class="material-card__origin">Niagara, ON · 130 km</div>
+        <p class="material-card__desc">Dramatic chocolate heartwood with violet undertones. We hand-select boards for figured grain on premium commissions.</p>
+      </div>
+      <div class="material-card">
+        <div class="material-card__swatch" style="background:#7B3D2E; background-image: repeating-linear-gradient(94deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 8px);"></div>
+        <h3 class="material-card__name">Cherry</h3>
+        <div class="material-card__origin">Muskoka, ON · 220 km</div>
+        <p class="material-card__desc">Smooth, fine-grained, and famously photochromic — cherry deepens from blush pink to rich auburn over its first decade.</p>
+      </div>
+      <div class="material-card">
+        <div class="material-card__swatch" style="background:#D4A96A; background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 10px);"></div>
+        <h3 class="material-card__name">Hard Maple</h3>
+        <div class="material-card__origin">Algonquin, ON · 290 km</div>
+        <p class="material-card__desc">The lightest of our hardwoods, with a near-invisible grain. Reads almost ceramic when finished with a matte topcoat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ────────────────────────────────── -->
+<section class="testimonials">
+  <div class="wrap">
+    <div style="max-width: 700px; margin-bottom: 24px;">
+      <div class="eyebrow" style="margin-bottom:24px">From the front step</div>
+      <h2 class="display">A handful of <em>kind words</em>.</h2>
+    </div>
+
+    <div class="testimonial-grid">
+      <div class="testimonial">
+        <blockquote>"The configurator made it feel like I was hiring a designer, not picking from a catalogue. When the door arrived it was exactly what I'd built on screen — only better."</blockquote>
+        <div class="testimonial__by">
+          <div class="testimonial__avatar">EM</div>
+          <div>
+            <div class="testimonial__name">Erin McAllister</div>
+            <div class="testimonial__role">Homeowner · Riverdale</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <blockquote>"Twelve weeks felt long until I watched them mortise the hinges by hand on installation day. Every detail of this door is right. Worth the wait."</blockquote>
+        <div class="testimonial__by">
+          <div class="testimonial__avatar">DK</div>
+          <div>
+            <div class="testimonial__name">David Kowalski</div>
+            <div class="testimonial__role">Homeowner · The Annex</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <blockquote>"I've spec'd doors from every major maker for fifteen years. TCD is the only shop in Ontario that will still build a true mortise-and-tenon door at this price point."</blockquote>
+        <div class="testimonial__by">
+          <div class="testimonial__avatar">PS</div>
+          <div>
+            <div class="testimonial__name">Priya Sharma</div>
+            <div class="testimonial__role">Architect · Sharma Studio</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ─────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="wrap">
+    <div class="eyebrow" style="margin-bottom:24px; color: var(--brass)">Ready when you are</div>
+    <h2 class="display">Let's build the<br/>door that belongs<br/>to your <em>home</em>.</h2>
+    <p>The configurator takes about four minutes. Save your design with a shareable link — quote arrives within one business day.</p>
+    <a href="configurator.html" class="btn btn--light">
+      Start with the configurator
+      <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h8M7 2l4 4-4 4"/></svg>
+    </a>
+  </div>
+</section>
+
+<div data-partial="footer"></div>
+
+<script src="partials.js"></script>
+<script src="door-render.js"></script>
+<script>
+  // Render hero scene + card thumbnails + process photo
+  document.addEventListener("DOMContentLoaded", () => {
+    const heroSvg = document.querySelector("#heroImage .scene");
+    if (heroSvg && window.renderDoorScene) {
+      heroSvg.innerHTML = window.renderDoorScene({
+        doorStyle: "six-panel", mat: "walnut", hwStyle: "lever",
+        hwFinish: "brass", glass: "none", hingeLeft: false,
+        scene: "hallway", w: 600, h: 750
+      });
+    }
+    document.querySelectorAll(".door-card__img").forEach(el => {
+      el.innerHTML = `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block;">${window.renderDoorScene({
+        doorStyle: el.dataset.door, mat: el.dataset.mat,
+        hwStyle: "lever", hwFinish: "brass", glass: "none",
+        hingeLeft: true, scene: "studio", w: 300, h: 400,
+      })}</svg>`;
+    });
+    const ph = document.querySelector("#processPhoto");
+    if (ph && window.renderShopScene) ph.innerHTML = window.renderShopScene(480, 600);
+  });
+</script>
+
+</body>
+</html>
